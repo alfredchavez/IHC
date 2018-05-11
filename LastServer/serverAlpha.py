@@ -131,6 +131,7 @@ class ClientThread(Thread):
         self.safe_send(self.dict_to_json(message))
         while True:
             data = self.safe_recv()
+            print 'DATA: ', data
             map_data = self.json_to_dict(data)
             if map_data['option'] == options['LOGIN']:
                 self.handle_recv_login(map_data)
@@ -216,11 +217,12 @@ class ClientThread(Thread):
 
                 # generate and send map(option @send_map)
                 for client in player_connections:
+                    print 'client sending: ', client.get_id()
                     client.generate_map()
-                    client.safe_send(self.dict_to_json({
+                    client.safe_send(client.dict_to_json({
                         'option': options['SEND_MAP'],
-                        'matrix_size': self.matrix_n * self.matrix_n,
-                        'map_data': maze_handler.matrix_to_JSON(client.client_data['const_map'])
+                        'matrix_size': 5,
+                        'map_data': maze_handler.matrix_to_JSON(client.client_data['const_map']).replace('true','1').replace('false','0').replace("'", '"')
                     }))
                 # send the maps to the viewers
 
@@ -250,7 +252,7 @@ class ClientThread(Thread):
             self.client_data['pos_y'],
             map_data['matrix_pos_x'],
             map_data['matrix_pos_y'],
-            self.client_data['visible_map']
+            (self.client_data['const_map'], self.client_data['visible_map'])
         )
         if valid:
             self.client_data['pos_x'] = map_data['matrix_pos_x']
@@ -260,7 +262,7 @@ class ClientThread(Thread):
         valid = maze_handler.validate_unlock(
             map_data['matrix_free_x'],
             map_data['matrix_free_y'],
-            self.client_data['visible_map'],
+            (self.client_data['const_map'], self.client_data['visible_map']),
             self.client_data['pos_x'],
             self.client_data['pos_y']
         )
@@ -278,11 +280,11 @@ class ClientThread(Thread):
                 'player_winner': self.client_data['20']
             }))
 
-        if not False:
+        elif not valid:
             self.safe_send(self.dict_to_json({
                 'option': options['NOT_VALID']
             }))
-        if valid:
+        elif valid:
             self.client_data['visible_map'][map_data['matrix_free_x']][map_data['matrix_free_y']] = True
             self.client_data['visible_map'][self.client_data['pos_x']][self.client_data['pos_y']] = True
 
