@@ -1,4 +1,4 @@
-from random import randrange as rand
+from random import randint as rand
 import json
 
 def generate_maze_visible(rows, cols):
@@ -58,7 +58,7 @@ def validate_unlock(target_row, target_col, maze_vis, pos_row, pos_col):
     row_size = len(maze_vis[0])
     col_size = len(maze_vis[0][0])
     
-    if(check_win(pos_row, pos_col, maze_vis)):
+    if(check_win(target_row, target_col, maze_vis)):
         return 2
 
     # Check boundaries
@@ -97,10 +97,6 @@ def check_win(pos_row, pos_col, maze_vis):
     '''
     row_size = len(maze_vis[0])
     col_size = len(maze_vis[0][0])
-
-    # Check that the goal square is visible
-    if not maze_vis[1][-1][-1]:
-        return False
 
     # Check that the position is the same as the goal position
     if pos_row == row_size - 1 and pos_col == col_size - 1:

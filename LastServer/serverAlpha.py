@@ -22,6 +22,8 @@ viewers_connections = []
 
 program_args = sys.argv
 
+game_started = False
+
 max_players = int(sys.argv[1])
 port = int(sys.argv[2])
 
@@ -43,6 +45,7 @@ options = {
     'READY_FOR_START': 14,
     'START_AGAIN': 15,
     'OPTION_GAME_FINISHED': 20,
+    'ALL_MAPS': 30,
     'DISCONNECT': 99,
     'SUPERUSER': 1000
 }
@@ -96,6 +99,7 @@ class DataSender(Thread):
                 error_queue.put('cannot send value to client with id = ' + str(client.get_id()))
 
     def send_to_id(self, message , id_connection):
+        print 'SENDING ', message, ' TO', id_connection
         for client in self.list_of_clients:
             if client.get_id() == id_connection:
                 try:
@@ -121,7 +125,8 @@ class ClientThread(Thread):
             'visible_map': None,
             'type': 1,
             'pos_x': 0,
-            'pos_y': 0
+            'pos_y': 0,
+            'all_plays': ''
         }
 
     def run(self):
@@ -132,17 +137,23 @@ class ClientThread(Thread):
         while True:
             data = self.safe_recv()
             print 'DATA: ', data
-            map_data = self.json_to_dict(data)
-            if map_data['option'] == options['LOGIN']:
-                self.handle_recv_login(map_data)
-            elif map_data['option'] == options['POSITION'] and not self.flag:
-                self.handle_recv_position(map_data)
-            elif map_data['option'] == options['POSITION'] and self.flag:
-                pass
-            elif map_data['option'] == options['UPDATE_POSITION']:
-                self.handle_recv_update(map_data)
-            elif map_data['option'] == options['FREE_SPACE']:
-                self.handle_recv_free_space(map_data)
+            try:
+                map_data = self.json_to_dict(data)
+                if map_data['option'] == options['LOGIN']:
+                    self.handle_recv_login(map_data)
+                elif map_data['option'] == options['POSITION'] and not self.flag:
+                    self.handle_recv_position(map_data)
+                elif map_data['option'] == options['POSITION'] and self.flag:
+                    pass
+                elif map_data['option'] == options['UPDATE_POSITION']:
+                    self.handle_recv_update(map_data)
+                elif map_data['option'] == options['FREE_SPACE']:
+                    self.handle_recv_free_space(map_data)
+                elif map_data['option'] == options['DISCONNECT']:
+                    self.handle_disconnect()
+            except socket.error, e:
+                print e.message
+        self.connection.close()
 
     def safe_send(self, message):
         general_queue.put((message, self.client_data['id']))
@@ -182,7 +193,29 @@ class ClientThread(Thread):
         global player_connections
         if map_data['type'] == 1:
             # lists in python are thread safe
+            print 'Appending to viewers'
             viewers_connections.append(self)
+            print len(viewers_connections)
+            if game_started:
+                maps_data = ''
+                jugadas = ''
+                for client in player_connections:
+                    maps_data += maze_handler.matrix_to_JSON(client.client_data['const_map']) + '&'
+                    jugadas += str(client.get_id()) + '&' + client.client_data['all_plays']
+                
+                if maps_data[-1] == '&':
+                    maps_data = maps_data[:-1]
+                
+                if jugadas[-1] == '&':
+                    jugadas = jugadas[:-1] 
+
+                for client in viewers_connections:
+                    print 'SENDING MAP TO CLIENT'
+                    client.safe_send(self.dict_to_json({
+                        'option': options['ALL_MAPS'],
+                        'maps_data': maps_data,
+                        'jugadas': jugadas
+                    }))
 
         elif map_data['type'] == 0:
             mutex.acquire()
@@ -214,20 +247,22 @@ class ClientThread(Thread):
                         'option': options['SET_GAME'],
                         'player_id': client.client_data['id']
                     }))
-
+                time.sleep(3)
                 # generate and send map(option @send_map)
                 for client in player_connections:
                     print 'client sending: ', client.get_id()
                     client.generate_map()
                     client.safe_send(client.dict_to_json({
                         'option': options['SEND_MAP'],
-                        'matrix_size': 5,
+                        'matrix_size': self.matrix_n,
                         'map_data': maze_handler.matrix_to_JSON(client.client_data['const_map']).replace('true','1').replace('false','0').replace("'", '"')
                     }))
                 # send the maps to the viewers
+                    
 
     def handle_recv_position(self, map_data):
         global num_players_validated
+        global game_started
         if map_data['matrix_pos_x'] == 0 and map_data['matrix_pos_y'] == 0:
             self.flag = True
             self.safe_send(self.dict_to_json({
@@ -241,10 +276,24 @@ class ClientThread(Thread):
             mutex2.release()
             if num_players_validated == max_players:
                 # send @set_game
+                #maps_data
+                maps_data = ''
+                game_started = True
                 for client in player_connections:
                     client.safe_send(self.dict_to_json({
                         'option': options['START'],
                     }))
+                    maps_data += maze_handler.matrix_to_JSON(client.client_data['const_map']) + '&'
+                    if maps_data[-1] == '&':
+                        maps_data = maps_data[:-1]
+                for client in viewers_connections:
+                    client.safe_send(self.dict_to_json({
+                        'option': options['ALL_MAPS'],
+                        'maps_data': maps_data,
+                        'jugadas': ''
+                    }))
+                
+            
 
     def handle_recv_update(self, map_data):
         valid = maze_handler.validate_mov(
@@ -277,7 +326,7 @@ class ClientThread(Thread):
             }))
             self.safe_broadcast(self.dict_to_json({
                 'option': options['OPTION_GAME_FINISHED'],
-                'player_winner': self.client_data['20']
+                'player_winner': self.client_data['id']
             }))
 
         elif not valid:
@@ -293,6 +342,18 @@ class ClientThread(Thread):
                 'matrix_free_x': map_data['matrix_free_x'],
                 'matrix_free_y': map_data['matrix_free_y'],
             }))
+            self.client_data['all_plays'] += str(map_data['matrix_free_x']) + '&' + str(map_data['matrix_free_y']) + '&'
+            for client in viewers_connections:
+                client.safe_send(self.dict_to_json({
+                    'option': 31,
+                    'player_id': self.get_id(),
+                    'liberar_x': map_data['matrix_free_x'],
+                    'liberar_y': map_data['matrix_free_y'],
+                }))
+
+    def handle_disconnect(self):
+        # self.connection.shutdown()
+        self.connection.close()
 
 
 HOST = '0.0.0.0'  # Symbolic name meaning all available interfaces
