@@ -213,7 +213,7 @@ class ClientThread(Thread):
                     print 'SENDING MAP TO CLIENT'
                     client.safe_send(self.dict_to_json({
                         'option': options['ALL_MAPS'],
-                        'maps_data': maps_data,
+                        'maps_data': maps_data.replace('true','1').replace('false','0').replace("'", '"'),
                         'jugadas': jugadas
                     }))
 
@@ -289,7 +289,7 @@ class ClientThread(Thread):
                 for client in viewers_connections:
                     client.safe_send(self.dict_to_json({
                         'option': options['ALL_MAPS'],
-                        'maps_data': maps_data,
+                        'maps_data': maps_data.replace('true','1').replace('false','0').replace("'", '"'),
                         'jugadas': ''
                     }))
                 
