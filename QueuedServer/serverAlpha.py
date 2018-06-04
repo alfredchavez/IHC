@@ -165,7 +165,7 @@ class ClientThread(Thread):
         while True:
             while(len(self.recvqueue) > 0):
                 data = self.recvqueue.get()
-            print 'DATA: ', data
+            print "DATA: ", data
             try:
                 map_data = self.json_to_dict(data)
                 if map_data['option'] == options['LOGIN']:
@@ -203,7 +203,7 @@ class ClientThread(Thread):
 
     def dict_to_json(self, map_data):
         str_json = json.dumps(map_data)
-        return str(len(str_json)).zfill(4) + str_json
+        return str(len(str_json)).zfill(6) + str_json
 
     def json_to_dict(self, str_json):
         return json.loads(str_json)
@@ -409,6 +409,8 @@ ms.setDaemon(True)
 ms.start()
 while 1:
     connec, addr = s.accept()
+    print "NEW CONNECTION: "
+    print connec
     newq = Queue.Queue()
     cc = ClientThread(ids + 0, connec, general_queue, all_connections, newq)
     ur = UnivReceiver(connec, newq)
