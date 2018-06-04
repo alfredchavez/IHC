@@ -173,7 +173,6 @@ class ClientThread(Thread):
             if data == None or data == '':
                 continue
             print 'DATA: ', data
-            continue
             print 'after continue'
             try:
                 map_data = self.json_to_dict(data)
