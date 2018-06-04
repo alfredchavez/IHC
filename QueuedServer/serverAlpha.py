@@ -111,27 +111,30 @@ class DataSender(Thread):
                 break
         print 'END_SEND'
 
-def process_json_input_q(jsonstr, json_clean):
-    brackets_open = 0
-    brackets_close = 0
-    json_str = ''
-    for ch in jsonstr:
-        json_str += ch
-        if ch == '{' :
-            brackets_open += 1
-        elif ch == '}':
-            brackets_open -= 1 
-        if brackets_open == 0:
-            json_clean.put(json_str) 
 
 class UnivReceiver(Thread):
     def __init__(self, connection, threadqueue):
         Thread.__init__(self)
         self.queue = threadqueue
         self.conn = connection
-    def run():
-        message_recv = self.conn.recv(1024)
-        process_json_input_q(message_recv, self.queue)
+    
+    def process_json_input_q(self,jsonstr, json_clean):
+        brackets_open = 0
+        brackets_close = 0
+        json_str = ''
+        for ch in jsonstr:
+            json_str += ch
+            if ch == '{' :
+                brackets_open += 1
+            elif ch == '}':
+                brackets_open -= 1 
+                if brackets_open == 0:
+                    json_clean.put(json_str[:]) 
+                    json_str = ''
+    def run(self):
+        while(True):
+            message_recv = self.conn.recv(1024)
+            self.process_json_input_q(message_recv[:], self.queue)
 
 
 
@@ -163,9 +166,15 @@ class ClientThread(Thread):
         }
         self.safe_send(self.dict_to_json(message))
         while True:
-            while(len(self.recvqueue) > 0):
+            data = ''
+            if not self.recvqueue.empty():
+                print 'while1'
                 data = self.recvqueue.get()
-            print "DATA: ", data
+            if data == None or data == '':
+                continue
+            print 'DATA: ', data
+            continue
+            print 'after continue'
             try:
                 map_data = self.json_to_dict(data)
                 if map_data['option'] == options['LOGIN']:
@@ -181,7 +190,9 @@ class ClientThread(Thread):
                 elif map_data['option'] == options['DISCONNECT']:
                     self.handle_disconnect()
             except socket.error, e:
+                print 'error'
                 print e.message
+        print 'closing connection'
         self.connection.close()
 
     def safe_send(self, message):
@@ -203,7 +214,7 @@ class ClientThread(Thread):
 
     def dict_to_json(self, map_data):
         str_json = json.dumps(map_data)
-        return str(len(str_json)).zfill(6) + str_json
+        return str(len(str_json)).zfill(4) + str_json
 
     def json_to_dict(self, str_json):
         return json.loads(str_json)
@@ -409,8 +420,6 @@ ms.setDaemon(True)
 ms.start()
 while 1:
     connec, addr = s.accept()
-    print "NEW CONNECTION: "
-    print connec
     newq = Queue.Queue()
     cc = ClientThread(ids + 0, connec, general_queue, all_connections, newq)
     ur = UnivReceiver(connec, newq)
