@@ -7,6 +7,15 @@ import time
 import maze_handler
 import json, errno
 
+if sys.argv[1] == '--help':
+    useServer = '''
+        tested in python2.7
+        run: python2.7 serverAlpha.py <arg1> <arg2> <arg3>
+        arg1: number of players
+        arg2: connection port
+        arg3: size of matrix row = col(arg3 x arg3)
+    '''
+
 mutex = Lock()
 mutex2 = Lock()
 
@@ -26,6 +35,7 @@ game_started = False
 
 max_players = int(sys.argv[1])
 port = int(sys.argv[2])
+MatrixSize = int(sys.argv[3])
 
 
 options = {
@@ -141,13 +151,13 @@ class UnivReceiver(Thread):
 class ClientThread(Thread):
     """ This class handle the client connection, data, etc. ; in a thread """
 
-    def __init__(self, assigned_id, connection, message_queue, list_connected, recvq):
+    def __init__(self, assigned_id, connection, message_queue, list_connected, recvq, matrix_size):
         Thread.__init__(self)
         self.queue = message_queue
         self.recvqueue = recvq
         self.mssg = Queue.Queue()
         self.flag = False
-        self.matrix_n = 5
+        self.matrix_n = matrix_size
         self.connection = connection
         self.list_of_connected = list_connected
         self.client_data = {
@@ -213,7 +223,7 @@ class ClientThread(Thread):
 
     def dict_to_json(self, map_data):
         str_json = json.dumps(map_data)
-        return str(len(str_json)).zfill(4) + str_json
+        return str(len(str_json)).zfill(6) + str_json
 
     def json_to_dict(self, str_json):
         return json.loads(str_json)
@@ -420,7 +430,7 @@ ms.start()
 while 1:
     connec, addr = s.accept()
     newq = Queue.Queue()
-    cc = ClientThread(ids + 0, connec, general_queue, all_connections, newq)
+    cc = ClientThread(ids + 0, connec, general_queue, all_connections, newq, MatrixSize)
     ur = UnivReceiver(connec, newq)
     ur.setDaemon(True)
     ur.start()
