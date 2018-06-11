@@ -57,10 +57,11 @@ options = {
     'OPTION_GAME_FINISHED': 20,
     'ALL_MAPS': 30,
     'DISCONNECT': 99,
-    'SUPERUSER': 1000
+    'SUPERUSER': 1000,
+    'RECONNECT': 88,
 }
 
-
+disconnected_users_data = {}
 
 
 class ErrorHandler(Thread):
@@ -198,9 +199,14 @@ class ClientThread(Thread):
                     self.handle_recv_free_space(map_data)
                 elif map_data['option'] == options['DISCONNECT']:
                     self.handle_disconnect()
+                elif map_data['reconnection'] == options['RECONNECT']:
+                    self.handle_reconnection(map_data)
             except socket.error, e:
                 print 'error'
-                print e.message
+                print 'OUTPUT: >>> ', e.message, '\n<<<'
+                disconnected_users_data[self.client_data['id']] = self.client_data
+                self.connection.close()
+                break
         print 'closing connection'
         self.connection.close()
 
@@ -233,6 +239,10 @@ class ClientThread(Thread):
         cmap, vmap = maze_handler.generate_maze_visible(self.matrix_n, self.matrix_n)
         self.client_data['const_map'] = cmap
         self.client_data['visible_map'] = vmap
+
+    def handle_reconnection(self, map_data):
+        id_player = map_data['id']
+        self.client_data = disconnected_users_data[id_player]
 
     def handle_recv_login(self, map_data):
         """ Handle LOGIN option """
