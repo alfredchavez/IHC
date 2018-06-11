@@ -272,6 +272,7 @@ class ClientThread(Thread):
         if map_data['type'] == 1:
             # lists in python are thread safe
             print 'Appending to viewers'
+            self.client_data['id'] = self.client_data['id'] + 100
             viewers_connections.append(self)
             print len(viewers_connections)
             if game_started:
@@ -291,6 +292,7 @@ class ClientThread(Thread):
                     print 'SENDING MAP TO CLIENT'
                     client.safe_send(self.dict_to_json({
                         'option': options['ALL_MAPS'],
+                        'matrix_size': self.matrix_n,
                         'maps_data': maps_data.replace('true','1').replace('false','0').replace("'", '"'),
                         'jugadas': jugadas
                     }))
@@ -303,6 +305,7 @@ class ClientThread(Thread):
                 return
             num_players += 1
             print num_players, 'compare', max_players
+            self.client_data['id'] = num_players
             player_connections.append(self)
 
             if num_players < max_players:
