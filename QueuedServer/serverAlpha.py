@@ -258,6 +258,10 @@ class ClientThread(Thread):
     def handle_reconnection(self, map_data):
         id_player = map_data['id']
         self.client_data = disconnected_users_data[id_player]
+        self.safe_send(self.dict_to_json({
+            'option': options['ALL_MAPS'],
+            'client_data': self.client_data,
+        }))
 
     def handle_recv_login(self, map_data):
         """ Handle LOGIN option """
