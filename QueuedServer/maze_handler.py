@@ -51,7 +51,7 @@ def validate_mov(current_row, current_col, next_row, next_col, maze_vis):
 
     return True
 
-def validate_unlock(target_row, target_col, maze_vis, pos_row, pos_col):
+def validate_unlock(target_row, target_col, maze_vis, pos_row, pos_col, maze):
     '''
     Returns: True if the target square (target_row, target_col) is unlockable.
     '''
@@ -69,24 +69,25 @@ def validate_unlock(target_row, target_col, maze_vis, pos_row, pos_col):
 
     # Check adjacent visible squares
     if target_row - 1 >= 0:
-        if target_col - 1 >= 0 and maze_vis[1][target_row - 1][target_col - 1]:
+        if target_col - 1 >= 0 and maze_vis[1][target_row - 1][target_col - 1] and !maze[target_row - 1][target_col - 1]:
             return True
-        if maze_vis[1][target_row - 1][target_col]:
+        if maze_vis[1][target_row - 1][target_col] and !maze[target_row - 1][target_col]:
             return True
         if (target_col + 1 < row_size and
-                maze_vis[1][target_row - 1][target_col + 1]):
+                maze_vis[1][target_row - 1][target_col + 1] and !maze[target_row - 1][target_col + 1]):
+            
             return True
-    if target_col - 1 >= 0 and maze_vis[1][target_row][target_col - 1]:
+    if target_col - 1 >= 0 and maze_vis[1][target_row][target_col - 1] and !maze[target_row][target_col - 1]:
         return True
-    if target_col + 1 < row_size and maze_vis[1][target_row][target_col + 1]:
+    if target_col + 1 < row_size and maze_vis[1][target_row][target_col + 1] and !maze[target_row][target_col + 1]:
         return True
     if target_row + 1 < row_size:
-        if target_col - 1 >= 0 and maze_vis[1][target_row + 1][target_col - 1]:
+        if target_col - 1 >= 0 and maze_vis[1][target_row + 1][target_col - 1] and !maze[target_row + 1][target_col - 1]:
             return True
-        if maze_vis[1][target_row + 1][target_col]:
+        if maze_vis[1][target_row + 1][target_col] and !maze[target_row + 1][target_col]:
             return True
         if (target_col + 1 < row_size and
-                maze_vis[1][target_row + 1][target_col + 1]):
+                maze_vis[1][target_row + 1][target_col + 1] and !maze[target_row + 1][target_col + 1]):
             return True
 
     return False
