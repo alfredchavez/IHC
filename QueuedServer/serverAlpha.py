@@ -142,9 +142,14 @@ class UnivReceiver(Thread):
                 if brackets_open == 0:
                     json_clean.put(json_str[:]) 
                     json_str = ''
+
     def run(self):
-        while(True):
+        while True:
             message_recv = self.conn.recv(1024)
+            if len(message_recv) == 0:
+                self.queue.put('-1')
+                break
+            print 'RECEIVED', message_recv
             self.process_json_input_q(message_recv[:], self.queue)
 
 
@@ -181,8 +186,18 @@ class ClientThread(Thread):
             if not self.recvqueue.empty():
                 print 'while1'
                 data = self.recvqueue.get()
-            if data == None or data == '':
+            if data == '':
                 continue
+            if data is None:
+                print 'muere chano'
+                continue
+            if data == '-1':
+                print 'ahora muere chano'
+                print 'error'
+                print 'OUTPUT: >>> ', '[-]Disconnecting ....' , '\n<<<'
+                disconnected_users_data[self.client_data['id']] = self.client_data
+                self.connection.close()
+                break
             print 'DATA: ', data
             print 'after continue'
             try:
@@ -372,7 +387,8 @@ class ClientThread(Thread):
             map_data['matrix_free_y'],
             (self.client_data['const_map'], self.client_data['visible_map']),
             self.client_data['pos_x'],
-            self.client_data['pos_y']
+            self.client_data['pos_y'],
+            self.client_data['const_map']
         )
 
         if valid == 2:
