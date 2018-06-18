@@ -280,7 +280,7 @@ class ClientThread(Thread):
                 jugadas = ''
                 for client in player_connections:
                     maps_data += maze_handler.matrix_to_JSON(client.client_data['const_map']) + '&'
-                    jugadas += str(client.get_id()) + '&' + client.client_data['all_plays']
+                    jugadas += client.client_data['all_plays']
                 
                 if maps_data[-1] == '&':
                     maps_data = maps_data[:-1]
@@ -424,7 +424,7 @@ class ClientThread(Thread):
                 'matrix_free_x': map_data['matrix_free_x'],
                 'matrix_free_y': map_data['matrix_free_y'],
             }))
-            self.client_data['all_plays'] += str(map_data['matrix_free_x']) + '&' + str(map_data['matrix_free_y']) + '&'
+            self.client_data['all_plays'] += str(self.get_id()) + '&' + str(map_data['matrix_free_x']) + '&' + str(map_data['matrix_free_y']) + '&'
             for client in viewers_connections:
                 client.safe_send(self.dict_to_json({
                     'option': 31,
