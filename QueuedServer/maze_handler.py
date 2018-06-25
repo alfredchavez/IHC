@@ -108,6 +108,53 @@ def validate_unlock(target_row, target_col, maze_vis, pos_row, pos_col, maze,t=F
         return 2
     return return_value
 
+def validate_unlock_pos(target_row, target_col, maze_vis, pos_row, pos_col, maze):
+    '''
+    Returns: True if the target square (target_row, target_col) is unlockable.
+    '''
+    row_size = len(maze_vis[0])
+    col_size = len(maze_vis[0][0])
+    
+    # Check closeness with the actual position pos_row, pos_col
+    if(abs(pos_row-target_row)>1 or abs(pos_col-target_col)>1):
+        return False
+
+    if(check_win(target_row, target_col, maze_vis)):
+        return 2
+
+    # Check boundaries
+    if target_row < 0 or target_row >= row_size:
+        return False
+    if target_row < 0 or target_row >= col_size:
+        return False
+
+    # Check adjacent visible squares
+    if target_row - 1 >= 0:
+        if target_col - 1 >= 0 and maze_vis[1][target_row - 1][target_col - 1] and not maze[target_row - 1][target_col - 1]:
+            return True
+        if maze_vis[1][target_row - 1][target_col] and not maze[target_row - 1][target_col]:
+            return True
+        if (target_col + 1 < row_size and
+                maze_vis[1][target_row - 1][target_col + 1] and not maze[target_row - 1][target_col + 1]):
+            
+            return True
+    if target_col - 1 >= 0 and maze_vis[1][target_row][target_col - 1] and not maze[target_row][target_col - 1]:
+        return True
+    if target_col + 1 < row_size and maze_vis[1][target_row][target_col + 1] and not maze[target_row][target_col + 1]:
+
+        return True
+    if target_row + 1 < row_size:
+        if target_col - 1 >= 0 and maze_vis[1][target_row + 1][target_col - 1] and not maze[target_row + 1][target_col - 1]:
+            return True
+        if maze_vis[1][target_row + 1][target_col] and not maze[target_row + 1][target_col]:
+            return True
+        if (target_col + 1 < row_size and
+                maze_vis[1][target_row + 1][target_col + 1] and not maze[target_row + 1][target_col + 1]):
+            return True
+
+    return False
+
+
 def check_win(pos_row, pos_col, maze_vis):
     '''
     Returns: True if the player win in the position (pos_row, pos_col).
