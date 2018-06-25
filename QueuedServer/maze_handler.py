@@ -52,46 +52,61 @@ def validate_mov(current_row, current_col, next_row, next_col, maze_vis):
     return True
 
 
-def validate_unlock(target_row, target_col, maze_vis, pos_row, pos_col, maze):
+def validate_unlock(target_row, target_col, maze_vis, pos_row, pos_col, maze,t=False):
     '''
     Returns: True if the target square (target_row, target_col) is unlockable.
     '''
+    print "VALOR DE T: ",t
+    for i in maze_vis[1]:
+        print i, " "
+    print "___________________________"
+    for i in maze:
+        print i, " "
+    print ""
+    print "___________________________"
+    print target_row, target_col
+    print "___________________________"
     row_size = len(maze_vis[0])
     col_size = len(maze_vis[0][0])
-    
-    if(check_win(target_row, target_col, maze_vis)):
-        return 2
 
     # Check boundaries
     if target_row < 0 or target_row >= row_size:
         return False
     if target_row < 0 or target_row >= col_size:
         return False
-
+    return_value = False;
     # Check adjacent visible squares
     if target_row - 1 >= 0:
         if target_col - 1 >= 0 and maze_vis[1][target_row - 1][target_col - 1] and not maze[target_row - 1][target_col - 1]:
-            return True
+            print "IF 1"
+            return_value= True
         if maze_vis[1][target_row - 1][target_col] and not maze[target_row - 1][target_col]:
-            return True
+            print "IF 2"
+            return_value= True
         if (target_col + 1 < row_size and
                 maze_vis[1][target_row - 1][target_col + 1] and not maze[target_row - 1][target_col + 1]):
-            
-            return True
+            print "IF 3"
+            return_value= True
     if target_col - 1 >= 0 and maze_vis[1][target_row][target_col - 1] and not maze[target_row][target_col - 1]:
-        return True
+        print "IF 4"
+        return_value= True
     if target_col + 1 < row_size and maze_vis[1][target_row][target_col + 1] and not maze[target_row][target_col + 1]:
-        return True
+        print "IF 5"
+        return_value= True
     if target_row + 1 < row_size:
         if target_col - 1 >= 0 and maze_vis[1][target_row + 1][target_col - 1] and not maze[target_row + 1][target_col - 1]:
-            return True
+            print "IF 6"
+            return_value= True
         if maze_vis[1][target_row + 1][target_col] and not maze[target_row + 1][target_col]:
-            return True
+            print "IF 7"
+            return_value= True
         if (target_col + 1 < row_size and
                 maze_vis[1][target_row + 1][target_col + 1] and not maze[target_row + 1][target_col + 1]):
-            return True
-
-    return False
+            print "IF 8"
+            return_value= True
+    if(return_value and check_win(target_row, target_col, maze_vis)):
+        return 2
+    return return_value
 
 def check_win(pos_row, pos_col, maze_vis):
     '''
